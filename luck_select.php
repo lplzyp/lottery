@@ -660,12 +660,25 @@ class lucky
                 $unused_num_case_lianshu_nums = 0;
                 foreach ($array_intersect1 as $key6 => $value6) {
                     $index = array_search($value6, $value);
-                    if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
+                    if ($index == 0) {
+                        if (abs($value[$index] - $value[$index + 1]) == 1) {
+                            $unused_num_case_lianshu_nums++;
+                            $u_nums++;
+                            break;
+                        }
+                    } else if ($index == 5) {
+                        if (abs($value[$index] - $value[$index - 1]) == 1) {
+                            $unused_num_case_lianshu_nums++;
+                            $u_nums++;
+                            break;
+                        }
+                    } else if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
                         $unused_num_case_lianshu_nums++;
                         $u_nums++;
                         break;
                     }
                 }
+            
                 if ($unused_num_case_lianshu_nums > 0) {
                     $middle .= str_pad("(U{$unused_num_case_lianshu_nums})", 4, " ");
                 } else {
@@ -682,7 +695,19 @@ class lucky
                 $array_intersect = array_intersect($value1, $value2);
                 foreach ($array_intersect as $key2 => $value3) {
                     $index = array_search($value3, $value1);
-                    if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
+                    if ($index == 0) {
+                        if (abs($value[$index] - $value[$index + 1]) == 1) {
+                            $last_num_cause_lianshu_nums++;
+                            $t_nums++;
+                            break;
+                        }
+                    } else if ($index == 5) {
+                        if (abs($value[$index] - $value[$index - 1]) == 1) {
+                            $last_num_cause_lianshu_nums++;
+                            $t_nums++;
+                            break;
+                        }
+                    } else if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
                         $last_num_cause_lianshu_nums++;
                         $t_nums++;
                         break;
