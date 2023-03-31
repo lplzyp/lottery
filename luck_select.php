@@ -654,7 +654,7 @@ class lucky
                 $middle .= str_pad('', 4, " ");
             }
 
-            if ($key < count($data) - $unused_step - 1 && $key > 0) {
+            if ($key < count($data) - $unused_step - 1) {
                 $unused_nums = $this->getRecentUnUsedNums($data, $key + 1, $unused_step);
                 $array_intersect1 = array_intersect($unused_nums, $value);
                 $unused_num_case_lianshu_nums = 0;
@@ -733,7 +733,7 @@ class lucky
 
                 echo " | UUS: ";
                 $unused_suffix = $unused_prefix = '';
-                if ($key < count($data) - $unused_step - 1 && $key > 0) {
+                if ($key < count($data) - $unused_step - 1) {
                     if ($unused_nums) {
                         $unused_suffix = str_pad('  ('. implode(" ", $unused_nums) .')', 12);
                     } else {
