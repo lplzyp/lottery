@@ -732,6 +732,7 @@ class lucky
                 }
 
                 echo " | UUS: ";
+                $unused_suffix = $unused_prefix = '';
                 if ($key < count($data) - $unused_step - 1 && $key > 0) {
                     if ($unused_nums) {
                         $unused_suffix = str_pad('  ('. implode(" ", $unused_nums) .')', 12);
@@ -778,7 +779,7 @@ class lucky
         echo "      rate(%): ".  ($t_nums / count($data) * 100). PHP_EOL;
         echo PHP_EOL;
 
-        echo "  Unused:". PHP_EOL;
+        echo "  Current Unused:". PHP_EOL;
         $unused_nums = $this->getRecentUnUsedNums($data, 0, $unused_step);
         echo "      unused_nums(0-{$unused_step}): ". implode(" ", $unused_nums). PHP_EOL;
 
