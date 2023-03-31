@@ -14,6 +14,8 @@ class lucky
 	const PrintAllUniqueNumsAction = 'printAllUniqueNums';
 	const MonitorAction = 'monitor';
 	const GetLuckyNumsAction = 'luckynumber';
+	const GetRecentUnUsedAction = 'unused';
+	const CheckAction = 'check';
 
 	private $is_refresh = false;
 
@@ -201,7 +203,7 @@ class lucky
 
 		$numbers = [];
 		for ($i = 0; $i < count($must_selection_1); $i++) { 
-			$number = $this->getPossibleCombo4($data, $i, $must_selection_1, $must_selection_2);
+			$number = $this->getPossibleCombo5($data, $i, $must_selection_1, $must_selection_2);
 			if ( !$number) {
 				continue;
 			}
@@ -209,16 +211,16 @@ class lucky
 			array_push($numbers, $number);
 		}
 
-		if (count($numbers) < 5) {
-			for ($i = 0; $i < count($must_selection_1); $i++) { 
-				$number = $this->getPossibleCombo1($data, $i, $must_selection_1, $must_selection_2);
-				if ( !$number) {
-					continue;
-				}
+		// if (count($numbers) < 5) {
+		// 	for ($i = 0; $i < count($must_selection_1); $i++) { 
+		// 		$number = $this->getPossibleCombo1($data, $i, $must_selection_1, $must_selection_2);
+		// 		if ( !$number) {
+		// 			continue;
+		// 		}
 
-				array_push($numbers, $number);
-			}
-		}
+		// 		array_push($numbers, $number);
+		// 	}
+		// }
 
 		if ($show_data) {
 			foreach ($numbers as $value) {
@@ -525,18 +527,30 @@ class lucky
 
 	public function getPossibleCombo5($data)
 	{
-		$first_rows = $data[0];
-		unset($first_rows[6]);
-		shuffle($first_rows);
-		$ball_1 = $first_rows[0];
+		$range = [
+			$this->getRangeNumber(1, 6),
+			$this->getRangeNumber(5, 12),
+			$this->getRangeNumber(9, 18),
+			$this->getRangeNumber(16, 24),
+			$this->getRangeNumber(20, 30),
+			$this->getRangeNumber(28, 33),
+		];
 
-		$possible_balls = [];
-		foreach (array_slice($data, 1, 3) as $key => $value) {
-			$possible_balls = array_merge($possible_balls, $value);
+		$balls = [];
+		foreach ($range as $key => $combo) {
+			while (true) {
+				shuffle($combo);
+				$ball = current($combo);
+				if (in_array($ball, $balls)) {
+					continue;
+				}
+
+				array_push($balls, $ball);
+				break;
+			}
 		}
 
-		$possible_balls = array_unique($possible_balls);
-
+		return $balls;
 	}
 
 	public function getRecentUnUsedNums($data, $start = 0, $rows = 10)
@@ -571,13 +585,255 @@ class lucky
 		die;
 	}
 
+	public function getRangeNumberList()
+	{
+		return [
+			$this->getRangeNumber(1, 6),
+			$this->getRangeNumber(5, 12),
+			$this->getRangeNumber(9, 18),
+			$this->getRangeNumber(16, 24),
+			$this->getRangeNumber(20, 30),
+			$this->getRangeNumber(28, 33),
+		];
+	}
+
 	public function printAll($data)
 	{
+		$range = $this->getRangeNumberList();
+		$sort = [];
+		$total_nums = 0;
+		$unused_step = 9;
+		$l_nums = $t_nums = $u_nums = 0;
+		$odd_sort_nums = [];
 		foreach ($data as $key => $value) {
-			echo implode(" ", $value);
+			$sum = array_sum($value);
+			if ($sum < 100) {
+				$sum = "0{$sum}";
+			}
+
+			$frontend_balls = $value;
+			unset($frontend_balls[6]);
+			$symbol_list = [];
+			$special_nums = [];
+			$lianshu_nums = 0;
+			$odd_nums = 0;
+			foreach ($frontend_balls as $key1 => $value5) {
+				$v = $range[$key1];
+				if (in_array($value5, $v)) {
+					array_push($symbol_list, 1);
+				} else {
+					array_push($symbol_list, 0);
+				}
+				if (strstr($value5, '6') || strstr($value5, '7') || strstr($value5, '8')) {
+					array_push($special_nums, $value5);
+				}
+				if ($key1 < 5) {
+					if (abs($value5 - $frontend_balls[$key1 + 1]) == 1) {
+						$lianshu_nums++;
+						$l_nums++;
+					}
+				}
+				if ($value5 % 2 != 0) {
+					$odd_nums++;
+				}
+			}
+
+			if (!in_array(0, $symbol_list)) {
+				$middle = str_pad("(all)", 5, " ");
+				$sort[$sum] += 1;
+				$total_nums++;
+			} else {
+				$middle = str_pad("", 5, " ");
+			}
+
+			if ($lianshu_nums > 0) {
+				$middle .= str_pad("(L{$lianshu_nums})", 4, " ");
+			} else {
+				$middle .= str_pad('', 4, " ");
+			}
+
+			if ($key < count($data) - $unused_step - 1 && $key > 0) {
+				$unused_nums = $this->getRecentUnUsedNums($data, $key + 1, $unused_step);
+				$array_intersect1 = array_intersect($unused_nums, $value);
+				$unused_num_case_lianshu_nums = 0;
+				foreach ($array_intersect1 as $key6 => $value6) {
+					$index = array_search($value6, $value);
+					if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
+						$unused_num_case_lianshu_nums++;
+						$u_nums++;
+						break;
+					}
+				}
+				if ($unused_num_case_lianshu_nums > 0) {
+					$middle .= str_pad("(U{$unused_num_case_lianshu_nums})", 4, " ");
+				} else {
+					$middle .= str_pad("", 4, " ");
+				}
+			} else {
+				$middle .= str_pad("", 4, " ");
+			}
+
+			$last_num_cause_lianshu_nums = 0;
+			if ($key != count($data) - 1) {
+				$value1 = array_slice($value, 0, 6);
+				$value2 = array_slice($data[$key + 1], 0, 6);
+				$array_intersect = array_intersect($value1, $value2);
+				foreach ($array_intersect as $key2 => $value3) {
+					$index = array_search($value3, $value1);
+					if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
+						$last_num_cause_lianshu_nums++;
+						$t_nums++;
+						break;
+					}
+				}
+			}
+
+			if ($last_num_cause_lianshu_nums > 0) {
+				$middle .= str_pad("(T{$last_num_cause_lianshu_nums})", 4, " ");
+			} else {
+				$middle .= str_pad("", 4, " ");
+			}
+
+			$odd_sort_nums[$odd_nums] += 1;
+			$even_nums = 6 - $odd_nums;
+			$middle .= str_pad("({$odd_nums}-{$even_nums})", 5, " ");
+
+			echo str_pad("{$sum}{$middle} : ". implode(" ", $value), 26, " ");
+			if ($key != count($data) - 1) {
+				echo " | SimilarWithPast: ";
+				if ($array_intersect) {
+					foreach ($array_intersect as $key2 => &$value3) {
+						$index = array_search($value3, $value2);
+						$position = $index + 1;
+						$value3 .= "({$position})";
+					}
+					
+					echo str_pad(implode(" ", $array_intersect), 25, " ");
+				} else {
+					echo str_pad("", 25, " ");
+				}
+
+				echo " | Blu: ";
+				if (in_array($data[$key + 1][6], $value)) {
+					$index = array_search($data[$key + 1][6], $value) + 1;
+					echo str_pad("{$data[$key + 1][6]}({$index})", 6, " ");
+				} else {
+					echo str_pad("", 6, " ");
+				}
+
+				echo " | SN: ";
+				if ($special_nums) {
+					echo str_pad(implode(" ", $special_nums), 19, " ");
+				} else {
+					echo str_pad("", 19, " ");	
+				}
+
+				echo " | UNUSED: ";
+				if ($key < count($data) - $unused_step - 1 && $key > 0) {
+					if ($unused_nums) {
+						$unused_suffix = str_pad('  ('. implode(" ", $unused_nums) .')', 15);
+					} else {
+						$unused_suffix = str_pad("", 15, " ");	
+					}
+
+					if ($array_intersect1) {
+						$unused_prefix = str_pad(implode(" ", $array_intersect1), 15);
+					} else {
+						$unused_prefix = str_pad("", 15, " ");	
+					}
+				}
+
+				echo $unused_prefix. $unused_suffix;
+			}
 			echo PHP_EOL;
 		}
-		die;
+
+		echo PHP_EOL;
+		$keys = array_keys($sort);
+		$average = intval(array_sum($keys) / count($keys));
+		echo "Summary:". PHP_EOL;
+		echo "	Red Sum:". PHP_EOL;
+		echo "		min: ". min($keys). PHP_EOL;
+		echo "		max: ". max($keys). PHP_EOL;
+		echo "		average: ". $average. PHP_EOL;
+		echo "		total_nums: {$total_nums}". PHP_EOL;
+		echo "		rate(%): ". ($total_nums / count($data) * 100). PHP_EOL;
+		echo PHP_EOL;
+
+		echo "	L:". PHP_EOL;
+		echo "		Sums: {$l_nums}". PHP_EOL;
+		echo "		rate(%): ".  ($l_nums / count($data) * 100). PHP_EOL;
+		echo PHP_EOL;
+
+		echo "	U:". PHP_EOL;
+		echo "		Sums: {$u_nums}". PHP_EOL;
+		echo "		rate(%): ".  ($u_nums / count($data) * 100). PHP_EOL;
+		echo PHP_EOL;
+
+		echo "	T:". PHP_EOL;
+		echo "		Sums: {$t_nums}". PHP_EOL;
+		echo "		rate(%): ".  ($t_nums / count($data) * 100). PHP_EOL;
+		echo PHP_EOL;
+
+		echo "	Unused:". PHP_EOL;
+		$unused_nums = $this->getRecentUnUsedNums($data, 0, $unused_step);
+		echo "		unused_nums(0-{$unused_step}): ". implode(" ", $unused_nums). PHP_EOL;
+
+		$high = $unused_step - 1;
+		$unused_nums1 = $this->getRecentUnUsedNums($data, 0, $high);
+		echo "		unused_nums(0-{$high}): ". implode(" ", $unused_nums1). PHP_EOL;
+		echo PHP_EOL;
+
+		echo "	Odd-Even(Num):". PHP_EOL;
+		arsort($odd_sort_nums);
+		foreach ($odd_sort_nums as $k => $v) {
+			$even = 6 - $k;
+			echo "		{$k} - {$even}  ($v)". PHP_EOL;	
+		}
+
+
+		echo PHP_EOL. PHP_EOL;
+	}
+
+	public function getComboSumLevel($red_combos)
+	{
+		$sum = array_sum($red_combos);
+		$history_sums = $this->getHistorySumRanges();
+		if (in_array($sum, $history_sums)) {
+			return 2;
+		}
+
+		if ($this->checkSumInRange($sum)) {
+			return 1;
+		}
+
+		return 0;
+	}
+
+	public function checkSumInRange($sum)
+	{
+		list ($low, $high) = $this->getRedSumsRange();
+		if ($low <= $sum && $high >= $sum) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public function getRedSumsRange()
+	{
+		return [90, 128];
+	}
+
+	public function getHistorySumRanges()
+	{
+		$range = <<<EOL
+[107,115,108,110,103,116,102,105,109,111,112,104,117,106,120,124,118,113,"098",114,121,101,119,"092","090","093",125,127,128,"099",123]
+EOL;
+
+		$range = json_decode($range, true);
+
+		return $range;
 	}
 
 	public function monitor($data)
@@ -588,14 +844,14 @@ class lucky
 			$data_sets = array_slice($data, $i, 100);
 			$try = 0;
 			while (true) {
-				if ($try >= 100) {
+				if ($try >= 1000) {
 					echo "try: {$try} failure". PHP_EOL;
 					break;
 				}
 
 				$numbers = $this->getGuessCombo($data_sets, false);
 				foreach ($numbers as $key => $value) {
-					if (count(array_intersect($value, $the_numbers)) >= 7) {
+					if (count(array_intersect($value, $the_numbers)) >= 6) {
 						echo "{$i} try: {$try} success". PHP_EOL;
 						echo implode(" ", $the_numbers). PHP_EOL;
 						echo implode(" ", $value). PHP_EOL;
@@ -641,197 +897,131 @@ class lucky
 	public function watch($data)
 	{
 		$total = 0;
-		$len = 1000;
-		// $rows = [];
-		// $argv_rows = [];
-		// $longest_steps = [];
-		// $longest_steps_sum = [];
-		// $blue_step = [];
-		// $sum = [];
-		// $count = 0;
-		// $exclude = [];
-		$sortss = [];
-		$sortaa = [];
-
-		// $possible = array_slice($data, 0, 5);
-		// $a = [];
-		// foreach ($possible as $key => $value) {
-		// 	$a = array_merge($a, $value);
-		// }
-		// $a = array_unique($a);
-		// echo implode("  ", $a);die;
-
+		$len = 100;
 		$combo_apear_sort = [];
-		// $range = [
-		// 	["01", "02", "03", "04", "05"],
-		// 	["06", "07", "10", "09", "05"],
-		// 	["14", "15", "13", "11", "12"],
-		// 	["22", "19", "23", "20", "17"],
-		// 	["27", "26", "25", "28", "24"],
-		// 	["33", "32", "31", "30", "29"],
-		// ];
-
-		$range = [
-			$this->getRangeNumber(1, 6),
-			$this->getRangeNumber(5, 12),
-			$this->getRangeNumber(9, 18),
-			$this->getRangeNumber(16, 24),
-			$this->getRangeNumber(20, 30),
-			$this->getRangeNumber(28, 33),
-		];
-
-
+		$data_symbol_list = [];
+		$fit_all_symbol_nums = 0;
+		$appear_num_sort = [];
+		$all_fit_data_sets = [];
+		$blue_ball_nums_sort = [];
+		$last_all_nums = [];
+		$range = $this->getRangeNumberList();
 		for ($i = 0; $i < $len; $i++) { 
 			$frontend_balls = $data[$i];
+			$same_positions = [];
 			unset($frontend_balls[6]);
-			$same = true;
+			
+			$symbol_list = [];
+			$backend_balls = $data[$i - 1];
+			unset($backend_balls[6]);
 			foreach ($frontend_balls as $key => $value) {
 				$v = $range[$key];
-				if ( !in_array($value, $v)) {
-					$same = false;
-					break;
+				if (in_array($value, $v)) {
+					array_push($symbol_list, 1);
+				} else {
+					array_push($symbol_list, 0);
+				}
+				if ($backend_balls) {
+					foreach ($backend_balls as $key3 => $value3) {
+						if ($value3 == $value) {
+							array_push($same_positions, $key + 1);
+						}
+					}
 				}
 			}
 
-			if ($same) {
-				echo implode("  ", $frontend_balls). PHP_EOL;
+			if (!in_array(0, $symbol_list)) {
+				$fit_all_symbol_nums++;
+				array_push($symbol_list, "all");
+				array_push($symbol_list, "--------------");
+				$symbol_list = array_merge($symbol_list, $data[$i]);
+				$appear_special_nums = [];
+				$near_combo_nums = 0;
+				foreach ($frontend_balls as $key => $value1) {
+					$appear_num_sort[$value1] += 1;
+					if (strstr($value1, '6') || strstr($value1, '7') || strstr($value1, '8')) {
+						array_push($appear_special_nums, $value1);
+					}
+					if ($key == 0) {
+						continue;
+					}
+					if (abs($value1 - $frontend_balls[$key - 1]) == 1) {
+						$near_combo_nums += 1;
+					}
+				}
+
+				// array_push($all_fit_data_sets, $frontend_balls);
+				// array_push($all_fit_data_sets, $data[$i]);
+				// echo implode("  ", $symbol_list). PHP_EOL;
+
+				if (empty($last_all_nums)) {
+					$last_all_nums = $frontend_balls;
+				} else {
+					$all_intersect = array_intersect($last_all_nums, $frontend_balls);
+					$last_all_nums = $frontend_balls;
+				}
+
+				$show = [];
+				if ($all_intersect) {
+					array_push($show, " SimilarWithFuture: ". implode(" ", $all_intersect));
+				}
+
+				if ($appear_special_nums) {
+					array_push($show, " 678_Sign: ". implode(" ", $appear_special_nums));
+				}
+
+				array_push($symbol_list, implode(" | ", $show));	
+
+				// if ($near_combo_nums > 0) {
+				// 	array_push($symbol_list, "  ComboNums: {$near_combo_nums} ");
+				// }
+
+			} else {
+				array_push($symbol_list, "   ");
+				array_push($symbol_list, "--------------");
+				// $symbol_list = array_merge($symbol_list, $frontend_balls);
+				$symbol_list = array_merge($symbol_list, $data[$i]);
+				// array_push($all_fit_data_sets, $data[$i]);
 			}
 
-			// unset($frontend_balls[6]);
-			// for ($j=$i + 1; $j < $len - 1; $j++) { 
-			// 	$backend_balls = $data[$j];
-			// 	unset($backend_balls[6]);
-			// 	if (count(array_intersect($frontend_balls, $backend_balls)) >= 5) {
-			// 		echo "{$i}:  ". implode(" ", $frontend_balls). PHP_EOL;
-			// 		echo "{$j}:  ". implode(" ", $backend_balls). PHP_EOL;
-			// 		echo PHP_EOL;
-			// 		// $number++;
-			// 		$combo_apear_sort[$i] += 1;
-			// 		$combo_apear_sort[$j] += 1;
-			// 	}
-			// }
-
-
-			// $frontend_balls = $data[$i];
-			// $backend_balls = $data[$i + 1];
-			// unset($frontend_balls[6], $backend_balls[6]);
-			// $array_intersect = array_intersect($frontend_balls, $backend_balls);
-			// if ($array_intersect) {
-			// 	$index1 = array_search(current($array_intersect), $backend_balls);
-			// 	$index2 = array_search(current($array_intersect), $frontend_balls);
-			// 	$sortss[$index1 + 1] += 1;
-			// 	$sortaa[current($array_intersect)] += 1;
-			// 	// echo "frontend: ". ($index2 + 1)  ."          backend: ". ($index1 + 1) . "      number:".current($array_intersect) .PHP_EOL;
-			// 	// if (($index1 + 1) == 2) {
-			// 	if (current($array_intersect) == "03" && ($index1 + 1) == 2) {
-			// 		echo implode(" ", $frontend_balls). PHP_EOL;
-			// 		echo implode(" ", $backend_balls). PHP_EOL;
-			// 		// if (current($array_intersect) == "03") {
-			// 		// 	echo "bingo". PHP_EOL;
-			// 		// }
-			// 		echo PHP_EOL;
-			// 	}
-			// }
-
-
-			// $biaoben = $data[$i];
-			// $big_data = [];
-			// for ($j = 1; $j <= 5; $j++) { 
-			// 	$big_data = array_merge($big_data, $data[$i + $j]);
-			// 	if (count(array_diff($biaoben, $big_data)) <= 2) {
-			// 		$unique_nums = count(array_unique($big_data));
-			// 		$unused_nums_list = $this->getRecentUnUsedNums(array_slice($data, $i + 1, $j));
-			// 		$unused_nums = count($unused_nums_list);
-			// 		$in_list_nums = count(array_intersect($unused_nums_list, $biaoben));
-			// 		echo "第{$i} 全部数字在 {$j} 层内，一共出现数字个数: {$unique_nums}, 之前未出现的数字有{$unused_nums}个，命中个数: {$in_list_nums} 个". PHP_EOL;
-			// 		break;
-			// 	}
-			// }
-
-			// $boolean = array_intersect($data[$i], $data[$i + 4]) 
-			// && array_intersect($data[$i], $data[$i + 1]) 
-			// && array_intersect($data[$i], $data[$i + 2]) 
-			// && array_intersect($data[$i], $data[$i + 3]) 
-			// && array_intersect($data[$i], $data[$i + 5])
-			// && array_intersect($data[$i], $data[$i + 6]);
-			// $array_intersect1 = array_intersect($data[$i], $data[$i + 1]);
-			// $array_intersect2 = array_intersect($data[$i], $data[$i + 2]);
-			// $array_intersect3 = array_intersect($data[$i], $data[$i + 3]);
-			// $array_intersect4 = array_intersect($data[$i], $data[$i + 4]);
-			// $array_intersect5 = array_intersect($data[$i], $data[$i + 5]);
-			// $array_intersect6 = array_intersect($data[$i], $data[$i + 6]);
-			// $result = array_intersect($array_intersect1, $array_intersect2, $array_intersect3, $array_intersect4, $array_intersect5, $array_intersect6);
-			// if ($boolean && !$result) {
-			// 	$count += 1;
-			// }
-
-			// var_dump($data[$i], $this->getRecentUnUsedNums($data, $i + 1, 10));die;
-			// if (array_intersect($data[$i], $this->getRecentUnUsedNums($data, $i + 1, 10)) && count($this->getRecentUnUsedNums($data, $i + 1, 10)) <= 4) {
-			// 	echo implode(" ", $this->getRecentUnUsedNums($data, $i + 1, 10)). '    ->     ' . implode(" ", array_intersect($data[$i], $this->getRecentUnUsedNums($data, $i + 1, 10))). PHP_EOL;
-			// 	// echo implode(" ", array_intersect($data[$i], $this->getRecentUnUsedNums($data, $i + 1, 10))). PHP_EOL;
-			// 	// echo implode(" ", $this->getRecentUnUsedNums($data, $i + 1, 10)). PHP_EOL;
-			// 	$sum[count((array_intersect($data[$i], $this->getRecentUnUsedNums($data, $i + 1, 10))))] += 1;
-			// 	$count += 1;
+			// Thu
+			// if ($i != 0 && $i % 3 == 2) {
+			// 	array_push($symbol_list, "  Thu   ");
+			// 	$blue_ball_nums_sort[$data[$i][6]] += 1;
+				// foreach ($frontend_balls as $key => $value) {
+				// 	if (strstr($value, "6") || strstr($value, "7") || strstr($value, "8")) {
+				// 		array_push($symbol_list, "  {$value}   ");
+				// 	}
+				// }
 			// } else {
-			// 	echo "------------". PHP_EOL;
+			// 	array_push($symbol_list, "        ");
 			// }
 
-			// $datum1 = array_slice($data[$i], 0, 6);
-			// $datum2 = array_slice($data[$i+1], 0, 6);
-			// $datum3 = array_slice($data[$i+2], 0, 6);
-			// $array_intersect = array_intersect($datum1, $datum3);
-			// if ($array_intersect) {
-			// 	echo implode("  ", $array_intersect). PHP_EOL;
-			// 	$sum[count($array_intersect)] += 1;
-			// } else {
-			// 	echo "------------". PHP_EOL;
-			// }
-			// if (array_intersect($datum1, $datum2, $datum3) && !in_array($i, $exclude)) {
-			// 	$count += 1;
-			// 	array_push($exclude, $i, $i+1, $i+2);
-			// }
+			// $sum = array_sum($frontend_balls);
+			// array_push($symbol_list, "   {$sum}    ");
 
-			// $combo = $data[$i];
-			// $blue_ball = $combo[6];
-			// for ($j=$i + 1; $j < self::PageSize; $j++) { 
-			// 	if ($blue_ball == $data[$j][6]) {
-			// 		// array_push($blue_step, $j - $i);
-			// 		$blue_step[$j - $i] += 1;
-			// 		break;
-			// 	}
-			// }
-
-			// $combo = $data[$i];
-			// $steps = [];
-			// $datum = array_slice($combo, 0, 6);
-			// $longest_steps_sign = null;
-			// $longest_step = 0;
-			// foreach ($datum as $index => $number) {
-			// 	for ($j = $i + 1; $j < self::PageSize; $j++) { 
-			// 		$search = $data[$j];
-			// 		if (in_array($number, $search)) {
-			// 			array_push($steps, $j - $i);
-			// 			if (max($steps) == $j - $i) {
-			// 				$longest_steps_sign = $index == 6 ? "blue" : "red";
-			// 				$longest_step = max($longest_step, $j - $i);
-			// 			}
-			// 			break;
-			// 		}
-			// 	}
-			// }
-
-			// sort($steps);
-			// array_push($steps, $longest_steps_sign);
-			// array_push($longest_steps, $longest_step);
-			// $longest_steps_sum[$longest_step] += 1;
-			// echo implode(" ", $steps). PHP_EOL;
-			// die;
-			// array_push($rows, $steps);
-			// array_push($argv_rows, intval(array_sum($steps) / 7));
+			echo implode("  ", $symbol_list). PHP_EOL;
 		}
 
-		// arsort($combo_apear_sort);
-		// print_r($combo_apear_sort);
+		// foreach ($all_fit_data_sets as $key => $value) {
+		// 	if ($key == count($all_fit_data_sets) - 1) {
+		// 		break;
+		// 	}
+
+		// 	$array_intersect = array_intersect($value, $all_fit_data_sets[$key + 1]);
+		// 	if ($array_intersect && count($array_intersect) == 4) {
+		// 		echo implode(" ", $array_intersect). PHP_EOL;
+		// 	} else {
+		// 		echo "------------------". PHP_EOL;
+		// 	}
+		// }
+
+		// echo PHP_EOL;
+		// echo "rate:   ". ($fit_all_symbol_nums / $len * 100). "%". PHP_EOL;
+		// echo PHP_EOL;
+
+		// arsort($blue_ball_nums_sort);
+		// print_r($blue_ball_nums_sort);
 		// die;
 
 		// arsort($sortaa);
@@ -905,20 +1095,43 @@ class lucky
 			case self::GetLuckyNumsAction:
 				return $this->getLuckyNumbers($data);
 
+			case self::GetRecentUnUsedAction:
+				echo implode(" ", $this->getRecentUnUsedNums($data, 0, 9)). PHP_EOL. PHP_EOL;
+				return;
+
+			case self::CheckAction:
+				// $combo = ['6',  '8',  '16',  '17',  '25',  '33'];
+				// $combo = ['6',  '8',  '16',  '17',  '25',  '29'];
+				// $combo = ['6',  '8',  '16',  '17',  '25',  '30'];
+				// $combo = ['6',  '8',  '16',  '17',  '25',  '31'];
+				// $combo = ['6',  '8',  '16',  '17',  '25',  '32'];
+				// $combo = ["06", "08", "12", "17", "25", "30"];
+				if ($this->checkComboHasExist($combo, $data)) {
+					echo "exits". PHP_EOL;
+				} else {
+					echo "non-exits". PHP_EOL;
+				}
+				
+				return;
+
+
 			default:
 				die("without action param");
 		}
 	}
 }
 
-// (new lucky($is_refresh = true, lucky::PrintAllAction, 1000, false))->main();
+// (new lucky($is_refresh = false, lucky::CheckAction, 1000, false))->main();
 // die;
 
-(new lucky($is_refresh = false, lucky::WatchAction, 1000, false))->main();
+// (new lucky($is_refresh = false, lucky::GetRecentUnUsedAction, 1000, false))->main();
+// die;
+
+// (new lucky($is_refresh = false, lucky::WatchAction, 1000, false))->main();
+// die;
+
+(new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false))->main();
 die;
-
-// (new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false))->main();
-// die;
 
 // (new lucky($is_refresh = false, lucky::GetLuckyNumsAction, 1000, false))->main();
 // die;
