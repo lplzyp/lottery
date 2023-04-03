@@ -12,6 +12,7 @@ class lucky
     const GuessAction = 'guess';
     const PrintFirstAction = 'printFirst';
     const PrintAllAction = 'printAll';
+    const PrintAllD1Action = 'printAllD1';
     const PrintFirstStepAction = 'printFirstStep';
     const PrintAllUniqueNumsAction = 'printAllUniqueNums';
     const MonitorAction = 'monitor';
@@ -27,12 +28,15 @@ class lucky
 
     private $abandon_latest_data = false;
 
-    public function __construct($is_refresh = false, $action = self::WatchAction, $data_set_lenth = 120, $abandon_latest_data = false)
+    private $only_choose_all = false;
+
+    public function __construct($is_refresh = false, $action = self::WatchAction, $data_set_lenth = 120, $abandon_latest_data = false, $only_choose_all = false)
     {
         $this->is_refresh = $is_refresh;
         $this->action = $action;
         $this->data_set_lenth = $data_set_lenth;
         $this->abandon_latest_data = $abandon_latest_data;
+        $this->only_choose_all = $only_choose_all;
     }
 
     private function getUrl()
@@ -599,7 +603,7 @@ class lucky
         ];
     }
 
-    public function printAll($data)
+    public function printAllDetail1($data)
     {
         $range = $this->getRangeNumberList();
         $sort = [];
@@ -608,7 +612,9 @@ class lucky
         $l_nums = $t_nums = $u_nums = 0;
         $odd_sort_nums = [];
         foreach ($data as $key => $value) {
-            $sum = array_sum($value);
+            $_value11 = $value;
+            unset($_value11[6]);
+            $sum = array_sum($_value11);
             if ($sum < 100) {
                 $sum = "0{$sum}";
             }
@@ -619,6 +625,9 @@ class lucky
             $special_nums = [];
             $lianshu_nums = 0;
             $odd_nums = 0;
+            $level_steps = [];
+            $red_ball_pos_detail = [];
+            $red_ball_total_level = 0;
             foreach ($frontend_balls as $key1 => $value5) {
                 $v = $range[$key1];
                 if (in_array($value5, $v)) {
@@ -638,6 +647,19 @@ class lucky
                 if ($value5 % 2 != 0) {
                     $odd_nums++;
                 }
+                if ( !in_array(intval($value5 / 10), $level_steps)) {
+                    array_push($level_steps, intval($value5 / 10));
+                }
+                for ($j = $key + 1; $j < count($data) - 9; $j++) { 
+                    $backend_ballsss = array_slice($data[$j], 0, 6);
+                    if (in_array($value5, $backend_ballsss)) {
+                        $pos = array_search($value5, $backend_ballsss) + 1;
+                        $level = $j - $key;
+                        array_push($red_ball_pos_detail, str_pad("{$level}", 2, " "). "($pos)");
+                        $red_ball_total_level += $level;
+                        break;
+                    }
+                }
             }
 
             if (!in_array(0, $symbol_list)) {
@@ -646,6 +668,9 @@ class lucky
                 $total_nums++;
             } else {
                 $middle = str_pad("", 5, " ");
+                if ($this->only_choose_all) {
+                    continue;
+                }
             }
 
             if ($lianshu_nums > 0) {
@@ -723,7 +748,8 @@ class lucky
 
             $odd_sort_nums[$odd_nums] += 1;
             $even_nums = 6 - $odd_nums;
-            $middle .= str_pad("({$odd_nums}-{$even_nums})", 5, " ");
+            $count_level_nums = count($level_steps);
+            $middle .= str_pad("({$odd_nums}-{$even_nums})(S{$count_level_nums})", 5, " ");
 
             array_push($frontend_balls, '('.$value[6].')');
             echo str_pad("{$sum}{$middle} : ". implode(" ", $frontend_balls), 26, " ");
@@ -732,8 +758,221 @@ class lucky
                 if ($array_intersect) {
                     foreach ($array_intersect as $key2 => &$value3) {
                         $index = array_search($value3, $value2);
-                        $position = $index + 1;
-                        $value3 .= "({$position})";
+                        $position1 = $index + 1;
+                        $index = array_search($value3, $value1);
+                        $position2 = $index + 1;
+                        $value3 .= "({$position2}-{$position1})";
+                    }
+                    
+                    echo str_pad(implode(" ", $array_intersect), 35, " ");
+                } else {
+                    echo str_pad("", 35, " ");
+                }
+
+                echo " | POS: ";
+                echo str_pad(implode(" ", $red_ball_pos_detail), 42, " ");
+
+                echo str_pad(" total: {$red_ball_total_level}", 4, " ");                
+                echo str_pad(" average: ". intval($red_ball_total_level / 6), 4, " ");
+    
+            }
+            echo PHP_EOL;
+        }
+
+        echo PHP_EOL;
+        $keys = array_keys($sort);
+        $average = intval(array_sum($keys) / count($keys));
+        echo "Summary:". PHP_EOL;
+        echo "  Red Sum:". PHP_EOL;
+        echo "      min: ". min($keys). PHP_EOL;
+        echo "      max: ". max($keys). PHP_EOL;
+        echo "      average: ". $average. PHP_EOL;
+        echo "      total_nums: {$total_nums}". PHP_EOL;
+        echo "      rate(%): ". ($total_nums / count($data) * 100). PHP_EOL;
+        echo PHP_EOL;
+
+        echo "  L:". PHP_EOL;
+        echo "      Sums: {$l_nums}". PHP_EOL;
+        echo "      rate(%): ".  ($l_nums / count($data) * 100). PHP_EOL;
+        echo PHP_EOL;
+
+        echo "  U:". PHP_EOL;
+        echo "      Sums: {$u_nums}". PHP_EOL;
+        echo "      rate(%): ".  ($u_nums / count($data) * 100). PHP_EOL;
+        echo PHP_EOL;
+
+        echo "  T:". PHP_EOL;
+        echo "      Sums: {$t_nums}". PHP_EOL;
+        echo "      rate(%): ".  ($t_nums / count($data) * 100). PHP_EOL;
+        echo PHP_EOL;
+
+        echo "  Current Unused:". PHP_EOL;
+        $unused_nums = $this->getRecentUnUsedNums($data, 0, $unused_step);
+        echo "      unused_nums(0-{$unused_step}): ". implode(" ", $unused_nums). PHP_EOL;
+
+        $high = $unused_step - 1;
+        $unused_nums1 = $this->getRecentUnUsedNums($data, 0, $high);
+        echo "      unused_nums(0-{$high}): ". implode(" ", $unused_nums1). PHP_EOL;
+        echo PHP_EOL;
+
+        echo "  Odd-Even(Num):". PHP_EOL;
+        arsort($odd_sort_nums);
+        foreach ($odd_sort_nums as $k => $v) {
+            $even = 6 - $k;
+            echo "      {$k} - {$even}  ($v)". PHP_EOL; 
+        }
+
+
+        echo PHP_EOL. PHP_EOL;
+    }
+
+    public function printAll($data)
+    {
+        $range = $this->getRangeNumberList();
+        $sort = [];
+        $total_nums = 0;
+        $unused_step = 9;
+        $l_nums = $t_nums = $u_nums = 0;
+        $odd_sort_nums = [];
+        foreach ($data as $key => $value) {
+            $_value11 = $value;
+            unset($_value11[6]);
+            $sum = array_sum($_value11);
+            if ($sum < 100) {
+                $sum = "0{$sum}";
+            }
+
+            $frontend_balls = $value;
+            unset($frontend_balls[6]);
+            $symbol_list = [];
+            $special_nums = [];
+            $lianshu_nums = 0;
+            $odd_nums = 0;
+            $level_steps = [];
+            foreach ($frontend_balls as $key1 => $value5) {
+                $v = $range[$key1];
+                if (in_array($value5, $v)) {
+                    array_push($symbol_list, 1);
+                } else {
+                    array_push($symbol_list, 0);
+                }
+                if (strstr($value5, '6') || strstr($value5, '7') || strstr($value5, '8')) {
+                    array_push($special_nums, $value5);
+                }
+                if ($key1 < 5) {
+                    if (abs($value5 - $frontend_balls[$key1 + 1]) == 1) {
+                        $lianshu_nums++;
+                        $l_nums++;
+                    }
+                }
+                if ($value5 % 2 != 0) {
+                    $odd_nums++;
+                }
+                if ( !in_array(intval($value5 / 10), $level_steps)) {
+                    array_push($level_steps, intval($value5 / 10));
+                }
+            }
+
+            if (!in_array(0, $symbol_list)) {
+                $middle = str_pad("(ALL)", 5, " ");
+                $sort[$sum] += 1;
+                $total_nums++;
+            } else {
+                $middle = str_pad("", 5, " ");
+                if ($this->only_choose_all) {
+                    continue;
+                }
+            }
+
+            if ($lianshu_nums > 0) {
+                $middle .= str_pad("(L{$lianshu_nums})", 4, " ");
+            } else {
+                $middle .= str_pad('', 4, " ");
+            }
+
+            if ($key < count($data) - $unused_step - 1) {
+                $unused_nums = $this->getRecentUnUsedNums($data, $key + 1, $unused_step);
+                $array_intersect1 = array_intersect($unused_nums, $value);
+                $unused_num_case_lianshu_nums = 0;
+                foreach ($array_intersect1 as $key6 => $value6) {
+                    $index = array_search($value6, $value);
+                    if ($index == 0) {
+                        if (abs($value[$index] - $value[$index + 1]) == 1) {
+                            $unused_num_case_lianshu_nums++;
+                            $u_nums++;
+                            break;
+                        }
+                    } else if ($index == 5) {
+                        if (abs($value[$index] - $value[$index - 1]) == 1) {
+                            $unused_num_case_lianshu_nums++;
+                            $u_nums++;
+                            break;
+                        }
+                    } else if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
+                        $unused_num_case_lianshu_nums++;
+                        $u_nums++;
+                        break;
+                    }
+                }
+            
+                if ($unused_num_case_lianshu_nums > 0) {
+                    $middle .= str_pad("(U{$unused_num_case_lianshu_nums})", 4, " ");
+                } else {
+                    $middle .= str_pad("", 4, " ");
+                }
+            } else {
+                $middle .= str_pad("", 4, " ");
+            }
+
+            $last_num_cause_lianshu_nums = 0;
+            if ($key != count($data) - 1) {
+                $value1 = array_slice($value, 0, 6);
+                $value2 = array_slice($data[$key + 1], 0, 6);
+                $array_intersect = array_intersect($value1, $value2);
+                foreach ($array_intersect as $key2 => $value3) {
+                    $index = array_search($value3, $value1);
+                    if ($index == 0) {
+                        if (abs($value[$index] - $value[$index + 1]) == 1) {
+                            $last_num_cause_lianshu_nums++;
+                            $t_nums++;
+                            break;
+                        }
+                    } else if ($index == 5) {
+                        if (abs($value[$index] - $value[$index - 1]) == 1) {
+                            $last_num_cause_lianshu_nums++;
+                            $t_nums++;
+                            break;
+                        }
+                    } else if (abs($value[$index] - $value[$index - 1]) == 1 || abs($value[$index] - $value[$index + 1]) == 1) {
+                        $last_num_cause_lianshu_nums++;
+                        $t_nums++;
+                        break;
+                    }
+                }
+            }
+
+            if ($last_num_cause_lianshu_nums > 0) {
+                $middle .= str_pad("(T{$last_num_cause_lianshu_nums})", 4, " ");
+            } else {
+                $middle .= str_pad("", 4, " ");
+            }
+
+            $odd_sort_nums[$odd_nums] += 1;
+            $even_nums = 6 - $odd_nums;
+            $count_level_nums = count($level_steps);
+            $middle .= str_pad("({$odd_nums}-{$even_nums})(S{$count_level_nums})", 5, " ");
+
+            array_push($frontend_balls, '('.$value[6].')');
+            echo str_pad("{$sum}{$middle} : ". implode(" ", $frontend_balls), 26, " ");
+            if ($key != count($data) - 1) {
+                echo " | SWP: ";
+                if ($array_intersect) {
+                    foreach ($array_intersect as $key2 => &$value3) {
+                        $index = array_search($value3, $value2);
+                        $position1 = $index + 1;
+                        $index = array_search($value3, $value1);
+                        $position2 = $index + 1;
+                        $value3 .= "({$position2}-{$position1})";
                     }
                     
                     echo str_pad(implode(" ", $array_intersect), 25, " ");
@@ -1112,6 +1351,9 @@ EOL;
             case self::PrintAllAction:
                 return $this->printAll($data);
 
+            case self::PrintAllD1Action:
+                return $this->printAllDetail1($data);
+
             case self::PrintAllUniqueNumsAction:
                 return $this->printAllUniqueNums($data);
 
@@ -1159,7 +1401,10 @@ EOL;
 // (new lucky($is_refresh = false, lucky::WatchAction, 1000, false))->main();
 // die;
 
-(new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false))->main();
+// (new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false, false))->main();
+// die;
+
+(new lucky($is_refresh = false, lucky::PrintAllD1Action, 1000, false, false))->main();
 die;
 
 // (new lucky($is_refresh = false, lucky::GetLuckyNumsAction, 1000, false))->main();
