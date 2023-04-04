@@ -613,6 +613,7 @@ class lucky
         $l_nums = $t_nums = $u_nums = 0;
         $odd_sort_nums = [];
         $level_and_position_sort = [];
+        $level_position_sort = [];
         foreach ($data as $key => $value) {
             $_value11 = $value;
             unset($_value11[6]);
@@ -666,6 +667,8 @@ class lucky
                         }
                         $boolean = true;
                         array_push($level_and_position_arr, "{$level}-{$pos}");    
+                        $level_position_sort["{$level}-{$pos}"] += 1;
+
                         
                         break;
                     }
@@ -837,8 +840,8 @@ class lucky
             echo "      {$k} - {$even}  ($v)". PHP_EOL; 
         }
 
-        arsort($level_and_position_sort);
-        print_r($level_and_position_sort);
+        arsort($level_position_sort);
+        print_r($level_position_sort);
 
 
         echo PHP_EOL. PHP_EOL;
