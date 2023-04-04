@@ -632,7 +632,6 @@ class lucky
             $red_ball_pos_detail = [];
             $red_ball_total_level = 0;
             $level_and_position_arr = [];
-            $boolean = false;
             foreach ($frontend_balls as $key1 => $value5) {
                 $v = $range[$key1];
                 if (in_array($value5, $v)) {
@@ -656,26 +655,23 @@ class lucky
                     array_push($level_steps, intval($value5 / 10));
                 }
                 for ($j = $key + 1; $j < count($data) - 9; $j++) { 
+                    if ($j - $key > 8) {
+                        break;
+                    }
                     $backend_ballsss = array_slice($data[$j], 0, 6);
                     if (in_array($value5, $backend_ballsss)) {
                         $pos = array_search($value5, $backend_ballsss) + 1;
                         $level = $j - $key;
                         array_push($red_ball_pos_detail, str_pad("{$level}", 2, " "). "($pos)");
                         $red_ball_total_level += $level;
-                        if ("{$level}-{$pos}" == "1-1" && empty($level_and_position_arr)) {
-                            $boolean = true;
-                        }
-                        $boolean = true;
                         array_push($level_and_position_arr, "{$level}-{$pos}");    
                         $level_position_sort["{$level}-{$pos}"] += 1;
-
-                        
                         break;
                     }
                 }
             }
 
-            if ($boolean) {
+            if (count($level_and_position_arr) == 6) {
                 $level_and_position_sort[implode("|", $level_and_position_arr)] += 1;    
             }
             
@@ -840,8 +836,8 @@ class lucky
             echo "      {$k} - {$even}  ($v)". PHP_EOL; 
         }
 
-        arsort($level_position_sort);
-        print_r($level_position_sort);
+        arsort($level_and_position_sort);
+        print_r($level_and_position_sort);
 
 
         echo PHP_EOL. PHP_EOL;
