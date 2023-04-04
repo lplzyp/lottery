@@ -13,6 +13,7 @@ class lucky
     const PrintFirstAction = 'printFirst';
     const PrintAllAction = 'printAll';
     const PrintAllD1Action = 'printAllD1';
+    const PrintBlueAction = 'printBlue';
     const PrintFirstStepAction = 'printFirstStep';
     const PrintAllUniqueNumsAction = 'printAllUniqueNums';
     const MonitorAction = 'monitor';
@@ -611,6 +612,7 @@ class lucky
         $unused_step = 9;
         $l_nums = $t_nums = $u_nums = 0;
         $odd_sort_nums = [];
+        $level_and_position_sort = [];
         foreach ($data as $key => $value) {
             $_value11 = $value;
             unset($_value11[6]);
@@ -628,6 +630,8 @@ class lucky
             $level_steps = [];
             $red_ball_pos_detail = [];
             $red_ball_total_level = 0;
+            $level_and_position_arr = [];
+            $boolean = false;
             foreach ($frontend_balls as $key1 => $value5) {
                 $v = $range[$key1];
                 if (in_array($value5, $v)) {
@@ -657,10 +661,21 @@ class lucky
                         $level = $j - $key;
                         array_push($red_ball_pos_detail, str_pad("{$level}", 2, " "). "($pos)");
                         $red_ball_total_level += $level;
+                        if ("{$level}-{$pos}" == "1-1" && empty($level_and_position_arr)) {
+                            $boolean = true;
+                        }
+                        $boolean = true;
+                        array_push($level_and_position_arr, "{$level}-{$pos}");    
+                        
                         break;
                     }
                 }
             }
+
+            if ($boolean) {
+                $level_and_position_sort[implode("|", $level_and_position_arr)] += 1;    
+            }
+            
 
             if (!in_array(0, $symbol_list)) {
                 $middle = str_pad("(ALL)", 5, " ");
@@ -821,6 +836,50 @@ class lucky
             $even = 6 - $k;
             echo "      {$k} - {$even}  ($v)". PHP_EOL; 
         }
+
+        arsort($level_and_position_sort);
+        print_r($level_and_position_sort);
+
+
+        echo PHP_EOL. PHP_EOL;
+    }
+
+    // 
+    public function printBlueDetail($data)
+    {
+        $data = array_slice($data, 0, 1000);
+        $data = array_reverse($data);
+        $range = $this->getRangeNumberList();
+        $last_thread_features = [];
+        $current_thread_features = [];
+        $period = 32;
+        $blue_balls = array_column($data, 6);
+        $blue_ball_pos = [];
+        foreach ($blue_balls as $key => $value) {
+            $blue_ball_pos[$value][] = $key + 1;
+        }
+
+        $sort = [];
+        foreach ($blue_ball_pos as $number => $arr) {
+            $steps = [];
+            foreach ($arr as $key1 => $value1) {
+                if ($key1 == 0) {
+                    continue;
+                }
+
+                $step = $value1 - $arr[$key1 - 1];
+                array_push($steps, $step);
+                $sort[$step] += 1;
+            }
+
+            $count = count($arr);
+            echo "{$number} ($count): ". PHP_EOL;
+            echo json_encode($steps). PHP_EOL;
+            echo PHP_EOL;
+        }
+
+        arsort($sort);
+        print_r($sort);
 
 
         echo PHP_EOL. PHP_EOL;
@@ -1354,6 +1413,9 @@ EOL;
             case self::PrintAllD1Action:
                 return $this->printAllDetail1($data);
 
+            case self::PrintBlueAction:
+                return $this->printBlueDetail($data);
+
             case self::PrintAllUniqueNumsAction:
                 return $this->printAllUniqueNums($data);
 
@@ -1402,6 +1464,11 @@ EOL;
 // die;
 
 // (new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false, false))->main();
+// die;
+
+
+
+// (new lucky($is_refresh = false, lucky::PrintBlueAction, 1000, false, false))->main();
 // die;
 
 (new lucky($is_refresh = false, lucky::PrintAllD1Action, 1000, false, false))->main();
