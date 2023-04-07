@@ -678,9 +678,16 @@ class lucky
                 }
             }
 
-            if (count($level_and_position_arr) == 6) {
-                $level_and_position_sort[implode("|", $level_and_position_arr)] += 1;    
-            }
+            // if (count($level_and_position_arr) == 6) {
+            //     $level_and_position_sort[implode("|", $level_and_position_arr)] += 1;    
+            // }
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 0, 2))] += 1;
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 1, 2))] += 1;
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 2, 2))] += 1;
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 3, 2))] += 1;
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 0, 3))] += 1;
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 1, 3))] += 1;
+            $level_and_position_sort[implode(" ", array_slice($frontend_balls, 2, 3))] += 1;
             
 
             if (!in_array(0, $symbol_list)) {
@@ -855,6 +862,7 @@ class lucky
         $odd_sort_nums = [];
         $level_position_sort = [];
         $last_sums = $diff = "00";
+        $_dd_sort = [];
         foreach ($data as $key => $value) {
             $_value11 = $value;
             unset($_value11[6]);
@@ -869,6 +877,7 @@ class lucky
                 $sum = "0{$sum}";
             }
 
+            $diff_sections = [];
             $frontend_balls = $value;
             unset($frontend_balls[6]);
             $symbol_list = [];
@@ -913,6 +922,10 @@ class lucky
                         $level_position_sort["{$level}-{$pos}"] += 1;
                         break;
                     }
+                }
+                if ($key1 > 0) {
+                    $diff_ = $value5 - $frontend_balls[$key1 - 1];
+                    array_push($diff_sections, str_pad("{$diff_}", 2, " "));
                 }
             }
 
@@ -1006,13 +1019,21 @@ class lucky
             $middle .= str_pad("({$odd_nums}-{$even_nums})(S{$count_level_nums})", 5, " ");
 
             array_push($frontend_balls, '('.$value[6].')');
-            $diff = str_pad("{$diff}", 2, " ");
+            $diff = str_pad("{$diff}", 3, " ");
             echo str_pad("{$sum}($diff){$middle} : ". implode(" ", $frontend_balls), 29, " ");
 
             echo " | IR: ";
-            echo str_pad(implode(" ", $symbol_list), 42, " ");
+            echo str_pad(implode(" ", $symbol_list), 12, " ");
+
+            echo " | DI: ";
+            $_sum = array_sum($diff_sections);
+            $_dd_sort[$_sum] += 1;
+            echo str_pad(implode(" ", $diff_sections), 14, " "). " ($_sum)";
             echo PHP_EOL;
         }
+
+        arsort($_dd_sort);
+        print_r($_dd_sort);
 
 
         echo PHP_EOL. PHP_EOL;
@@ -1638,8 +1659,8 @@ EOL;
 // (new lucky($is_refresh = false, lucky::WatchAction, 1000, false))->main();
 // die;
 
-(new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false, false))->main();
-die;
+// (new lucky($is_refresh = false, lucky::PrintAllAction, 1000, false, false))->main();
+// die;
 
 // (new lucky($is_refresh = false, lucky::PrintBlueAction, 1000, false, false))->main();
 // die;
@@ -1647,8 +1668,8 @@ die;
 // (new lucky($is_refresh = false, lucky::PrintAllD1Action, 1000, false, false))->main();
 // die;
 
-// (new lucky($is_refresh = false, lucky::PrintAllD2Action, 1000, false, false))->main();
-// die;
+(new lucky($is_refresh = false, lucky::PrintAllD2Action, 1000, false, false))->main();
+die;
 
 // (new lucky($is_refresh = false, lucky::GetLuckyNumsAction, 1000, false))->main();
 // die;
