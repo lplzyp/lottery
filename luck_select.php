@@ -863,6 +863,7 @@ class lucky
         $level_position_sort = [];
         $last_sums = $diff = "00";
         $_dd_sort = [];
+        $_dd_sort_1 = [];
         foreach ($data as $key => $value) {
             $_value11 = $value;
             unset($_value11[6]);
@@ -887,6 +888,7 @@ class lucky
             $level_steps = [];
             $red_ball_pos_detail = [];
             $red_ball_total_level = 0;
+            $red_all_in_4_levels = true;
             foreach ($frontend_balls as $key1 => $value5) {
                 $v = $range[$key1];
                 if (in_array($value5, $v)) {
@@ -910,6 +912,9 @@ class lucky
                     array_push($level_steps, intval($value5 / 10));
                 }
                 for ($j = $key + 1; $j < count($data) - 9; $j++) { 
+                    if ($j - $key > 4) {
+                        $red_all_in_4_levels = false;
+                    }
                     if ($j - $key > 8) {
                         break;
                     }
@@ -923,9 +928,13 @@ class lucky
                         break;
                     }
                 }
+                if (count($data) - $key < 9) {
+                    $red_all_in_4_levels = false;
+                }
                 if ($key1 > 0) {
                     $diff_ = $value5 - $frontend_balls[$key1 - 1];
                     array_push($diff_sections, str_pad("{$diff_}", 2, " "));
+                    $_dd_sort_1[$diff_] += 1;
                 }
             }
 
@@ -1013,6 +1022,12 @@ class lucky
                 $middle .= str_pad("", 4, " ");
             }
 
+            if ($red_all_in_4_levels) {
+                $middle .= str_pad("(In4L)", 6, " ");
+            } else {
+                $middle .= str_pad("", 6, " ");   
+            }
+
             $odd_sort_nums[$odd_nums] += 1;
             $even_nums = 6 - $odd_nums;
             $count_level_nums = count($level_steps);
@@ -1032,8 +1047,11 @@ class lucky
             echo PHP_EOL;
         }
 
-        arsort($_dd_sort);
-        print_r($_dd_sort);
+        // arsort($_dd_sort);
+        // print_r($_dd_sort);
+
+        arsort($_dd_sort_1);
+        print_r($_dd_sort_1);
 
 
         echo PHP_EOL. PHP_EOL;
