@@ -864,16 +864,19 @@ class lucky
         $last_sums = $diff = "00";
         $_dd_sort = [];
         $_dd_sort_1 = [];
+        $range_combo_sort = [];
         foreach ($data as $key => $value) {
             $_value11 = $value;
             unset($_value11[6]);
             $sum = array_sum($_value11);
+            $sum_range = 0;
             if ($last_sums == 0) {
                 $last_sums = $sum;
             } else {
                 $diff = abs($sum - $last_sums);
                 $last_sums = $sum;
             }
+            $sum_range = intval($sum / 10);
             if ($sum < 100) {
                 $sum = "0{$sum}";
             }
@@ -1045,13 +1048,26 @@ class lucky
             $_dd_sort[$_sum] += 1;
             echo str_pad(implode(" ", $diff_sections), 14, " "). " ($_sum)";
             echo PHP_EOL;
+
+            $range_combo_sort["{$sum_range}"][implode(" ", $symbol_list)] += 1;
         }
 
         // arsort($_dd_sort);
         // print_r($_dd_sort);
 
-        arsort($_dd_sort_1);
-        print_r($_dd_sort_1);
+        // arsort($_dd_sort_1);
+        // print_r($_dd_sort_1);
+
+        echo PHP_EOL. PHP_EOL;
+        // arsort($range_combo_sort);
+        foreach ($range_combo_sort as $range_index => $value8) {
+            arsort($value8);
+            echo "{$range_index}0-". ($range_index + 1). "0 : ". PHP_EOL;
+            print_r($value8);
+        }
+
+        // arsort($range_combo_sort);
+        // print_r($range_combo_sort);
 
 
         echo PHP_EOL. PHP_EOL;
